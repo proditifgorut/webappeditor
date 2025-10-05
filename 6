@@ -1,0 +1,254 @@
+import { useState, useEffect, useCallback } from 'react';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { javascript } from '@codemirror/lang-javascript';
+import { FileCode, Braces, Code } from 'lucide-react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import JSZip from 'jszip';
+
+import Header from './components/Header';
+import Editor from './components/Editor';
+import { useMediaQuery } from './hooks/useMediaQuery';
+
+const defaultHTML = `<header>
+  <h1>Prodi TI Code Editor Demo</h1>
+  <p>Prodi Informatika Fakultas Ilmu Komputer Universitas Ichsan Gorontalo Utara</p>
+</header>
+
+<body>
+  <section class="card">
+    <h2>Live Editing</h2>
+    <p>Edit the HTML, CSS, and JavaScript code on the left to see instant changes here.</p>
+  </section>
+
+  <section class="card">
+    <h2>Interactive Example</h2>
+    <p>Click the button to trigger a JavaScript event.</p>
+    <button id="myButton">Click Me!</button>
+    <p id="output"></p>
+  </section>
+</body>
+
+<footer>
+  <p>Happy Coding! &copy; 2025</p>
+</footer>`;
+
+const defaultCSS = `/* ====== GLOBAL STYLE ====== */
+body {
+  font-family: "Segoe UI", sans-serif;
+  background-color: #f5f6fa;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+header {
+  background: #4b7bec;
+  color: #fff;
+  text-align: center;
+  padding: 2rem 1rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+header p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+main, body > section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+h2 {
+  color: #3867d6;
+  margin-top: 0;
+}
+
+button {
+  background: #3867d6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #2748a0;
+}
+
+footer {
+  background: #2f3640;
+  color: #f5f6fa;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}`;
+
+const defaultJS = `const btn = document.getElementById("myButton");
+const output = document.getElementById("output");
+
+btn.addEventListener("click", () => {
+  output.textContent = "Button clicked! Event handled by JavaScript.";
+});`;
+
+function App() {
+  const [htmlCode, setHtmlCode] = useState<string>(defaultHTML);
+  const [cssCode, setCssCode] = useState<string>(defaultCSS);
+  const [jsCode, setJsCode] = useState<string>(defaultJS);
+  const [srcDoc, setSrcDoc] = useState<string>('');
+  const isLg = useMediaQuery('(min-width: 1024px)');
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSrcDoc(`
+        <html>
+          <head>
+            <style>${cssCode}</style>
+          </head>
+          <body>
+            ${htmlCode}
+            <script>${jsCode}<\/script>
+          </body>
+        </html>
+      `);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [htmlCode, cssCode, jsCode]);
+
+  const handleReset = useCallback(() => {
+    setHtmlCode(defaultHTML);
+    setCssCode(defaultCSS);
+    setJsCode(defaultJS);
+  }, []);
+
+  const handleClear = useCallback(() => {
+    setHtmlCode('');
+    setCssCode('');
+    setJsCode('');
+  }, []);
+
+  const handleDownload = useCallback(async () => {
+    const zip = new JSZip();
+
+    const htmlFileContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exported Code</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  ${htmlCode}
+  <script src="script.js"><\/script>
+</body>
+</html>`;
+
+    zip.file('index.html', htmlFileContent);
+    zip.file('style.css', cssCode);
+    zip.file('script.js', jsCode);
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'prodi-ti-code-editor.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [htmlCode, cssCode, jsCode]);
+
+  return (
+    <div className="bg-[#1e1e1e] text-white">
+      <Header onReset={handleReset} onClear={handleClear} onDownload={handleDownload} />
+      
+      <main className="p-2 md:p-4">
+        <div className="h-[calc(100vh-85px)]">
+          <PanelGroup direction={isLg ? 'horizontal' : 'vertical'}>
+            <Panel defaultSize={50} minSize={25}>
+              <PanelGroup direction="vertical">
+                <Panel defaultSize={33} minSize={15}>
+                  <Editor
+                    title="HTML"
+                    icon={<FileCode className="w-4 h-4 text-[#e44d26]" />}
+                    languageExtension={html()}
+                    value={htmlCode}
+                    onChange={setHtmlCode}
+                  />
+                </Panel>
+                <PanelResizeHandle className="h-1.5 w-full bg-[#3e3e42] data-[resize-handle-state=drag]:bg-[#3794ff] data-[resize-handle-state=hover]:bg-[#3794ff] transition-colors" />
+                <Panel defaultSize={33} minSize={15}>
+                  <Editor
+                    title="CSS"
+                    icon={<Braces className="w-4 h-4 text-[#264de4]" />}
+                    languageExtension={css()}
+                    value={cssCode}
+                    onChange={setCssCode}
+                  />
+                </Panel>
+                <PanelResizeHandle className="h-1.5 w-full bg-[#3e3e42] data-[resize-handle-state=drag]:bg-[#3794ff] data-[resize-handle-state=hover]:bg-[#3794ff] transition-colors" />
+                <Panel minSize={15}>
+                  <Editor
+                    title="JavaScript"
+                    icon={<Code className="w-4 h-4 text-[#f0db4f]" />}
+                    languageExtension={javascript()}
+                    value={jsCode}
+                    onChange={setJsCode}
+                  />
+                </Panel>
+              </PanelGroup>
+            </Panel>
+            <PanelResizeHandle className={`bg-[#3e3e42] data-[resize-handle-state=drag]:bg-[#3794ff] data-[resize-handle-state=hover]:bg-[#3794ff] transition-colors ${isLg ? 'w-1.5' : 'h-1.5'}`} />
+            <Panel defaultSize={50} minSize={25}>
+              <div className="flex flex-col h-full">
+                <div className="bg-[#2d2d30] px-4 py-2 border-b border-[#3e3e42] flex-shrink-0">
+                  <span className="font-medium text-sm">Preview</span>
+                </div>
+                <div className="flex-1 bg-white">
+                  <iframe
+                    srcDoc={srcDoc}
+                    title="Live Preview"
+                    sandbox="allow-scripts"
+                    className="w-full h-full border-0"
+                  />
+                </div>
+              </div>
+            </Panel>
+          </PanelGroup>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,43 @@
+import React from 'react';
+import CodeMirror from '@uiw/react-codemirror';
+import { Extension } from '@codemirror/state';
+import { oneDark } from '@codemirror/theme-one-dark';
+
+interface EditorProps {
+  title: string;
+  icon: React.ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  languageExtension: Extension;
+}
+
+const Editor: React.FC<EditorProps> = ({ title, icon, value, onChange, languageExtension }) => {
+  return (
+    <div className="flex flex-col h-full bg-[#252526]">
+      <div className="bg-[#2d2d30] px-4 py-2 border-b border-[#3e3e42] flex items-center gap-2 flex-shrink-0">
+        {icon}
+        <span className="text-white font-medium text-sm">{title}</span>
+      </div>
+      <div className="flex-grow overflow-auto">
+        <CodeMirror
+          value={value}
+          height="100%"
+          theme={oneDark}
+          extensions={[languageExtension]}
+          onChange={onChange}
+          className="text-sm h-full"
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: true,
+            foldGutter: true,
+            bracketMatching: true,
+            autocompletion: true,
+            highlightActiveLine: true,
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default Editor;

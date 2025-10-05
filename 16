@@ -1,0 +1,48 @@
+import React from 'react';
+import { RotateCcw, Download, Code2, Trash2 } from 'lucide-react';
+
+interface HeaderProps {
+  onReset: () => void;
+  onClear: () => void;
+  onDownload: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onReset, onClear, onDownload }) => {
+  return (
+    <header className="bg-[#2d2d30] border-b border-[#3e3e42] px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="flex items-center gap-2">
+        <Code2 className="w-6 h-6 text-[#3794ff]" />
+        <h1 className="text-white font-semibold text-lg">Prodi TI Code Editor</h1>
+      </div>
+      
+      <div className="flex gap-2">
+        <button
+          onClick={onClear}
+          className="flex items-center gap-2 px-4 py-2 bg-[#3e3e42] hover:bg-[#4e4e52] text-white rounded transition-colors duration-200"
+          aria-label="Clear All Code"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="hidden sm:inline">Clear</span>
+        </button>
+        <button
+          onClick={onReset}
+          className="flex items-center gap-2 px-4 py-2 bg-[#3e3e42] hover:bg-[#4e4e52] text-white rounded transition-colors duration-200"
+          aria-label="Reset Code"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span className="hidden sm:inline">Reset</span>
+        </button>
+        <button
+          onClick={onDownload}
+          className="flex items-center gap-2 px-4 py-2 bg-[#0e639c] hover:bg-[#1177bb] text-white rounded transition-colors duration-200"
+          aria-label="Download Code"
+        >
+          <Download className="w-4 h-4" />
+          <span className="hidden sm:inline">Download ZIP</span>
+        </button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
